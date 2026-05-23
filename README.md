@@ -121,4 +121,3 @@ pygit/
 ## License
 
 MIT License — see [LICENSE.txt](LICENSE.txt) for details.  
-Original work by [Ben Hoyt](http://benhoyt.com/writings/pygit/), 2017.
