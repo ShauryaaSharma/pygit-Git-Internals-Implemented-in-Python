@@ -1,8 +1,7 @@
 # nanogit — Git Internals Implemented in Python
 
-A minimal Git client built from scratch in Python using only the standard library. Implements core Git internals — object hashing, index parsing, tree and commit writing, and pack file pushing over HTTP Smart Protocol. Supports `init`, `add`, `commit`, `diff`, `status`, and `push` to GitHub in just 500 lines.
+A minimal Git client built from scratch in Python using only the standard library. Implements core Git internals, object hashing, index parsing, tree and commit writing, and pack file pushing over HTTP Smart Protocol. Supports `init`, `add`, `commit`, `diff`, `status`, and `push` to GitHub.
 
-> Based on [pygit](https://github.com/benhoyt/pygit) by Ben Hoyt. See [LICENSE.txt](LICENSE.txt).
 
 ---
 
@@ -49,8 +48,8 @@ nanogit implements:
 ## Installation
 
 ```bash
-git clone https://github.com/ShauryaaSharma/nanogit.git
-cd nanogit
+git clone https://github.com/ShauryaaSharma/nanogit-Git-Internals-Implemented-in-Python.git
+cd nanogit-Git-Internals-Implemented-in-Python
 ```
 
 ---
@@ -112,7 +111,7 @@ python nanogit.py push https://github.com/username/repo.git
 
 ```
 nanogit/
-├── nanogit.py       # Full implementation (~500 lines)
+├── nanogit.py       # Full implementation
 ├── LICENSE.txt    # MIT License
 └── README.md
 ```
@@ -122,4 +121,3 @@ nanogit/
 ## License
 
 MIT License — see [LICENSE.txt](LICENSE.txt) for details.  
-Original work by [Ben Hoyt](http://benhoyt.com/writings/pygit/), 2017.
