@@ -1,13 +1,14 @@
-# pygit — Git Internals Implemented in Python
+# nanogit — Git Internals Implemented in Python
 
-A minimal Git client built from scratch in Python using only the standard library. Implements core Git internals — object hashing, index parsing, tree and commit writing, and pack file pushing over HTTP Smart Protocol. Supports `init`, `add`, `commit`, `diff`, `status`, and `push` to GitHub.
+A minimal Git client built from scratch in Python using only the standard library. Implements core Git internals — object hashing, index parsing, tree and commit writing, and pack file pushing over HTTP Smart Protocol. Supports `init`, `add`, `commit`, `diff`, `status`, and `push` to GitHub in just 500 lines.
 
+> Based on [pygit](https://github.com/benhoyt/pygit) by Ben Hoyt. See [LICENSE.txt](LICENSE.txt).
 
 ---
 
 ## What it does
 
-pygit implements just enough of Git to:
+nanogit implements just enough of Git to:
 
 - Initialize a local repository
 - Stage files to the index
@@ -29,7 +30,7 @@ Git's object model is built on three core object types stored in `.git/objects/`
 
 Each object is SHA-1 hashed, zlib-compressed, and written to `.git/objects/ab/cdef...`.
 
-pygit implements:
+nanogit implements:
 
 - **Object store** — hashing, reading, and writing blobs, trees, and commits
 - **Index parsing** — reading and writing the binary `.git/index` file
@@ -48,8 +49,8 @@ pygit implements:
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/pygit.git
-cd pygit
+git clone https://github.com/ShauryaaSharma/nanogit.git
+cd nanogit
 ```
 
 ---
@@ -58,33 +59,33 @@ cd pygit
 
 ### Initialize a repo
 ```bash
-python pygit.py init myrepo
+python nanogit.py init myrepo
 cd myrepo
 ```
 
 ### Stage files
 ```bash
-python pygit.py add file.py
+python nanogit.py add file.py
 ```
 
 ### Check status
 ```bash
-python pygit.py status
+python nanogit.py status
 ```
 
 ### View diff
 ```bash
-python pygit.py diff
+python nanogit.py diff
 ```
 
 ### Commit
 ```bash
-python pygit.py commit -m "Your commit message"
+python nanogit.py commit -m "Your commit message"
 ```
 
 ### Push to GitHub
 ```bash
-python pygit.py push https://github.com/username/repo.git
+python nanogit.py push https://github.com/username/repo.git
 ```
 
 > You will be prompted for your GitHub username and password (or personal access token).
@@ -110,8 +111,8 @@ python pygit.py push https://github.com/username/repo.git
 ## Project Structure
 
 ```
-pygit/
-├── pygit.py       # Full implementation 
+nanogit/
+├── nanogit.py       # Full implementation (~500 lines)
 ├── LICENSE.txt    # MIT License
 └── README.md
 ```
@@ -121,3 +122,4 @@ pygit/
 ## License
 
 MIT License — see [LICENSE.txt](LICENSE.txt) for details.  
+Original work by [Ben Hoyt](http://benhoyt.com/writings/pygit/), 2017.
