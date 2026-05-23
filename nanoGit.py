@@ -2,7 +2,6 @@ import argparse, collections, difflib, enum, hashlib, operator, os, stat
 import struct, sys, time, urllib.request, zlib
 
 
-# Data for one entry in the git index (.git/index)
 IndexEntry = collections.namedtuple('IndexEntry', [
     'ctime_s', 'ctime_n', 'mtime_s', 'mtime_n', 'dev', 'ino', 'mode', 'uid',
     'gid', 'size', 'sha1', 'flags', 'path',
@@ -10,28 +9,22 @@ IndexEntry = collections.namedtuple('IndexEntry', [
 
 
 class ObjectType(enum.Enum):
-    """Object type enum. There are other types too, but we don't need them.
-    See "enum object_type" in git's source (git/cache.h).
-    """
     commit = 1
     tree = 2
     blob = 3
 
 
 def read_file(path):
-    """Read contents of file at given path as bytes."""
     with open(path, 'rb') as f:
         return f.read()
 
 
 def write_file(path, data):
-    """Write data bytes to file at given path."""
     with open(path, 'wb') as f:
         f.write(data)
 
 
 def init(repo):
-    """Create directory for repo and initialize .git directory."""
     os.mkdir(repo)
     os.mkdir(os.path.join(repo, '.git'))
     for name in ['objects', 'refs', 'refs/heads']:
@@ -41,9 +34,6 @@ def init(repo):
 
 
 def hash_object(data, obj_type, write=True):
-    """Compute hash of object data of given type and write to object store if
-    "write" is True. Return SHA-1 object hash as hex string.
-    """
     header = '{} {}'.format(obj_type, len(data)).encode()
     full_data = header + b'\x00' + data
     sha1 = hashlib.sha1(full_data).hexdigest()
@@ -56,10 +46,6 @@ def hash_object(data, obj_type, write=True):
 
 
 def find_object(sha1_prefix):
-    """Find object with given SHA-1 prefix and return path to object in object
-    store, or raise ValueError if there are no objects or multiple objects
-    with this prefix.
-    """
     if len(sha1_prefix) < 2:
         raise ValueError('hash prefix must be 2 or more characters')
     obj_dir = os.path.join('.git', 'objects', sha1_prefix[:2])
@@ -74,9 +60,6 @@ def find_object(sha1_prefix):
 
 
 def read_object(sha1_prefix):
-    """Read object with given SHA-1 prefix and return tuple of
-    (object_type, data_bytes), or raise ValueError if not found.
-    """
     path = find_object(sha1_prefix)
     full_data = zlib.decompress(read_file(path))
     nul_index = full_data.index(b'\x00')
@@ -90,12 +73,6 @@ def read_object(sha1_prefix):
 
 
 def cat_file(mode, sha1_prefix):
-    """Write the contents of (or info about) object with given SHA-1 prefix to
-    stdout. If mode is 'commit', 'tree', or 'blob', print raw data bytes of
-    object. If mode is 'size', print the size of the object. If mode is
-    'type', print the type of the object. If mode is 'pretty', print a
-    prettified version of the object.
-    """
     obj_type, data = read_object(sha1_prefix)
     if mode in ['commit', 'tree', 'blob']:
         if obj_type != mode:
@@ -120,7 +97,6 @@ def cat_file(mode, sha1_prefix):
 
 
 def read_index():
-    """Read git index file and return list of IndexEntry objects."""
     try:
         data = read_file(os.path.join('.git', 'index'))
     except FileNotFoundError:
@@ -148,9 +124,6 @@ def read_index():
 
 
 def ls_files(details=False):
-    """Print list of files in index (including mode, SHA-1, and stage number
-    if "details" is True).
-    """
     for entry in read_index():
         if details:
             stage = (entry.flags >> 12) & 3
@@ -161,9 +134,6 @@ def ls_files(details=False):
 
 
 def get_status():
-    """Get status of working copy, return tuple of (changed_paths, new_paths,
-    deleted_paths).
-    """
     paths = set()
     for root, dirs, files in os.walk('.'):
         dirs[:] = [d for d in dirs if d != '.git']
@@ -184,7 +154,6 @@ def get_status():
 
 
 def status():
-    """Show status of working copy."""
     changed, new, deleted = get_status()
     if changed:
         print('changed files:')
@@ -201,7 +170,6 @@ def status():
 
 
 def diff():
-    """Show diff of files changed (between index and working copy)."""
     changed, _, _ = get_status()
     entries_by_path = {e.path: e for e in read_index()}
     for i, path in enumerate(changed):
@@ -222,7 +190,6 @@ def diff():
 
 
 def write_index(entries):
-    """Write list of IndexEntry objects to git index file."""
     packed_entries = []
     for entry in entries:
         entry_head = struct.pack('!LLLLLLLLLL20sH',
@@ -240,7 +207,6 @@ def write_index(entries):
 
 
 def add(paths):
-    """Add all file paths to git index."""
     paths = [p.replace('\\', '/') for p in paths]
     all_entries = read_index()
     entries = [e for e in all_entries if e.path not in paths]
@@ -259,7 +225,6 @@ def add(paths):
 
 
 def write_tree():
-    """Write a tree object from the current index entries."""
     tree_entries = []
     for entry in read_index():
         assert '/' not in entry.path, \
@@ -271,7 +236,6 @@ def write_tree():
 
 
 def get_local_master_hash():
-    """Get current commit hash (SHA-1 string) of local master branch."""
     master_path = os.path.join('.git', 'refs', 'heads', 'master')
     try:
         return read_file(master_path).decode().strip()
@@ -280,9 +244,6 @@ def get_local_master_hash():
 
 
 def commit(message, author=None):
-    """Commit the current state of the index to master with given message.
-    Return hash of commit object.
-    """
     tree = write_tree()
     parent = get_local_master_hash()
     if author is None:
@@ -312,7 +273,6 @@ def commit(message, author=None):
 
 
 def extract_lines(data):
-    """Extract list of lines from given server data."""
     lines = []
     i = 0
     for _ in range(1000):
@@ -329,7 +289,6 @@ def extract_lines(data):
 
 
 def build_lines_data(lines):
-    """Build byte string from given lines to send to server."""
     result = []
     for line in lines:
         result.append('{:04x}'.format(len(line) + 5).encode())
@@ -340,9 +299,6 @@ def build_lines_data(lines):
 
 
 def http_request(url, username, password, data=None):
-    """Make an authenticated HTTP request to given URL (GET by default, POST
-    if "data" is not None).
-    """
     password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     password_manager.add_password(None, url, username, password)
     auth_handler = urllib.request.HTTPBasicAuthHandler(password_manager)
@@ -352,9 +308,6 @@ def http_request(url, username, password, data=None):
 
 
 def get_remote_master_hash(git_url, username, password):
-    """Get commit hash of remote master branch, return SHA-1 hex string or
-    None if no remote commits.
-    """
     url = git_url + '/info/refs?service=git-receive-pack'
     response = http_request(url, username, password)
     lines = extract_lines(response)
@@ -369,9 +322,6 @@ def get_remote_master_hash(git_url, username, password):
 
 
 def read_tree(sha1=None, data=None):
-    """Read tree object with given SHA-1 (hex string) or data, and return list
-    of (mode, path, sha1) tuples.
-    """
     if sha1 is not None:
         obj_type, data = read_object(sha1)
         assert obj_type == 'tree'
@@ -392,9 +342,6 @@ def read_tree(sha1=None, data=None):
 
 
 def find_tree_objects(tree_sha1):
-    """Return set of SHA-1 hashes of all objects in this tree (recursively),
-    including the hash of the tree itself.
-    """
     objects = {tree_sha1}
     for mode, path, sha1 in read_tree(sha1=tree_sha1):
         if stat.S_ISDIR(mode):
@@ -405,9 +352,6 @@ def find_tree_objects(tree_sha1):
 
 
 def find_commit_objects(commit_sha1):
-    """Return set of SHA-1 hashes of all objects in this commit (recursively),
-    its tree, its parents, and the hash of the commit itself.
-    """
     objects = {commit_sha1}
     obj_type, commit = read_object(commit_sha1)
     assert obj_type == 'commit'
@@ -421,9 +365,6 @@ def find_commit_objects(commit_sha1):
 
 
 def find_missing_objects(local_sha1, remote_sha1):
-    """Return set of SHA-1 hashes of objects in local commit that are missing
-    at the remote (based on the given remote commit hash).
-    """
     local_objects = find_commit_objects(local_sha1)
     if remote_sha1 is None:
         return local_objects
@@ -432,9 +373,6 @@ def find_missing_objects(local_sha1, remote_sha1):
 
 
 def encode_pack_object(obj):
-    """Encode a single object for a pack file and return bytes (variable-
-    length header followed by compressed data bytes).
-    """
     obj_type, data = read_object(obj)
     type_num = ObjectType[obj_type].value
     size = len(data)
@@ -450,9 +388,6 @@ def encode_pack_object(obj):
 
 
 def create_pack(objects):
-    """Create pack file containing all objects in given given set of SHA-1
-    hashes, return data bytes of full pack file.
-    """
     header = struct.pack('!4sLL', b'PACK', 2, len(objects))
     body = b''.join(encode_pack_object(o) for o in sorted(objects))
     contents = header + body
@@ -462,7 +397,6 @@ def create_pack(objects):
 
 
 def push(git_url, username=None, password=None):
-    """Push master branch to given git repo URL."""
     if username is None:
         username = os.environ['GIT_USERNAME']
     if password is None:
@@ -517,12 +451,10 @@ if __name__ == '__main__':
             help='text of commit message')
 
     sub_parser = sub_parsers.add_parser('diff',
-            help='show diff of files changed (between index and working '
-                 'copy)')
+            help='show diff of files changed (between index and working copy)')
 
     sub_parser = sub_parsers.add_parser('hash-object',
-            help='hash contents of given path (and optionally write to '
-                 'object store)')
+            help='hash contents of given path (and optionally write to object store)')
     sub_parser.add_argument('path',
             help='path of file to hash')
     sub_parser.add_argument('-t', choices=['commit', 'tree', 'blob'],
@@ -539,19 +471,16 @@ if __name__ == '__main__':
     sub_parser = sub_parsers.add_parser('ls-files',
             help='list files in index')
     sub_parser.add_argument('-s', '--stage', action='store_true',
-            help='show object details (mode, hash, and stage number) in '
-                 'addition to path')
+            help='show object details (mode, hash, and stage number) in addition to path')
 
     sub_parser = sub_parsers.add_parser('push',
             help='push master branch to given git server URL')
     sub_parser.add_argument('git_url',
-            help='URL of git repo, eg: https://github.com/ShauryaaSharma/pygit-Git-Internals-Implemented-in-Python.git')
+            help='URL of git repo, eg: https://github.com/ShauryaaSharma/nanogit.git')
     sub_parser.add_argument('-p', '--password',
-            help='password to use for authentication (uses GIT_PASSWORD '
-                 'environment variable by default)')
+            help='password to use for authentication (uses GIT_PASSWORD environment variable by default)')
     sub_parser.add_argument('-u', '--username',
-            help='username to use for authentication (uses GIT_USERNAME '
-                 'environment variable by default)')
+            help='username to use for authentication (uses GIT_USERNAME environment variable by default)')
 
     sub_parser = sub_parsers.add_parser('status',
             help='show status of working copy')
